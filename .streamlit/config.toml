@@ -1,0 +1,17 @@
+# .streamlit/config.toml
+
+[theme]
+# The primary accent color for widgets, links, etc.
+primaryColor="#22c55e"
+
+# Main background color
+backgroundColor="#f6f8f6"
+
+# Background color for cards, containers, etc.
+secondaryBackgroundColor="#FFFFFF"
+
+# Main text color
+textColor="#1f2937"
+
+# Font for the app
+font="sans serif"
