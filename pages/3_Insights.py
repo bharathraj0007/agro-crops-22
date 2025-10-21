@@ -5,8 +5,6 @@ import re
 import numpy as np
 import os
 import pandas as pd
-from translations import get_text, get_language_switcher
-from header import custom_header
 
 # Correctly set up the path to import shared files
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -15,12 +13,13 @@ sys.path.append(ROOT_DIR)
 import db_functions
 import crop_data
 from sidebar import authenticated_sidebar
+from translations import get_text, get_language_switcher
+from header import custom_header
+from layout_helper import setup_page, close_page_div
 
-# Initialize session state for language if not already set
+# Initialize session state
 if 'lang' not in st.session_state:
     st.session_state.lang = 'en'
-
-# Initialize session state for any insights preferences
 if 'insights_preferences' not in st.session_state:
     st.session_state.insights_preferences = {}
  
@@ -30,20 +29,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
- 
-def load_css(file_name):
-    """Load and inject CSS styles."""
-    css_path = os.path.join(ROOT_DIR, file_name)
-    try:
-        with open(css_path, 'r', encoding='utf-8') as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning(f"CSS file not found: {file_name}")
 
-load_css("style_pro.css")
-
-# Add page-specific CSS class
-st.markdown('<div class="insights-page">', unsafe_allow_html=True)
+# Setup page with consistent layout
+setup_page(
+    title="Insights",
+    icon="📊",
+    background_image="https://images.unsplash.com/photo-1574943320219-553eb213f72d?q=80&w=2070&auto=format&fit=crop",
+    page_class="insights-page"
+)
  
 # Custom CSS for the Insights page
 st.markdown("""

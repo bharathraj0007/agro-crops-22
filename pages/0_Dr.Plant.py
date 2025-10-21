@@ -6,8 +6,9 @@ import os
 # --- Path setup ---
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
-from app import load_css
+
 import db_functions
+from layout_helper import setup_page, close_page_div
 
 # Initialize page config
 st.set_page_config(
@@ -17,8 +18,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Load custom CSS
-load_css('style_pro.css')
+# Setup page with consistent layout
+setup_page(
+    title="Dr. Plant",
+    icon="🌿",
+    background_image="https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?q=80&w=2070&auto=format&fit=crop",
+    page_class="drplant-page"
+)
 
 # Initialize session state
 if 'analyzing' not in st.session_state:

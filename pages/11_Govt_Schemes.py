@@ -5,20 +5,20 @@ import os
 # --- Correctly set up the path to import shared files ---
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
+
 import header
 from sidebar import authenticated_sidebar
+from layout_helper import setup_page, close_page_div
 
 st.set_page_config(page_title="Government Schemes", page_icon="🏦", layout="wide", initial_sidebar_state="expanded")
 
-def load_css(file_name):
-    css_path = os.path.join(ROOT_DIR, file_name)
-    with open(css_path, encoding='utf-8') as f: 
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-load_css("style_pro.css")
-
-# Add page-specific CSS class
-st.markdown('<div class="govt-schemes-page">', unsafe_allow_html=True)
+# Setup page with consistent layout
+setup_page(
+    title="Government Schemes",
+    icon="🏦",
+    background_image="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop",
+    page_class="govt-schemes-page"
+)
 
 # --- Authentication Check ---
 # if not st.session_state.get('logged_in'):

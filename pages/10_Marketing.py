@@ -5,17 +5,19 @@ import os
 # --- Correctly set up the path to import shared files ---
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
+
 import header
+from layout_helper import setup_page, close_page_div
 
 st.set_page_config(page_title="Why AgriAssist?", page_icon="🌱", layout="wide", initial_sidebar_state="expanded")
 
-def load_css(file_name):
-    # Correct path to find CSS from the pages subfolder
-    css_path = os.path.join(ROOT_DIR, file_name)
-    with open(css_path, encoding='utf-8') as f: 
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-load_css("style_pro.css")
+# Setup page with consistent layout
+setup_page(
+    title="Marketing",
+    icon="🌱",
+    background_image="https://images.unsplash.com/photo-1560493676-04071c5f467b?q=80&w=2074&auto=format&fit=crop",
+    page_class="marketing-page"
+)
 
 # --- Authentication Check ---
 # For a marketing page, you might want to show this even to non-logged-in users.

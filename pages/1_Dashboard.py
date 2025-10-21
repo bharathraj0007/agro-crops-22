@@ -5,7 +5,6 @@ import os
 import datetime
 import pandas as pd
 import requests
-# from streamlit_extras.metric_cards import style_metric_cards
 
 # --- Path setup ---
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -22,25 +21,21 @@ st.set_page_config(
 import db_functions
 from translations import get_text, get_language_switcher
 from header import custom_header
-
-# Load CSS
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-def load_css(file_name):
-    css_path = os.path.join(ROOT_DIR, file_name)
-    with open(css_path, encoding='utf-8') as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+from layout_helper import setup_page, close_page_div
 
 # Initialize session state
 if 'lang' not in st.session_state:
     st.session_state.lang = 'en'
-
-# Initialize session state for any dashboard preferences
 if 'dashboard_preferences' not in st.session_state:
     st.session_state.dashboard_preferences = {}
 
-# Load CSS and set page config
-load_css("style_pro.css")
+# Setup page with consistent layout
+setup_page(
+    title="Dashboard",
+    icon="🌱",
+    background_image="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?q=80&w=2070&auto=format&fit=crop",
+    page_class="dashboard-page"
+)
 
 # Set custom styles for metrics
 st.markdown("""
