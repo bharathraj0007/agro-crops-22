@@ -247,10 +247,25 @@ if st.session_state.profile_soil_type == "Loamy" and profile_data['soil_type'] !
 if not st.session_state.profile_preferences and profile_data['preferences']:
     st.session_state.profile_preferences = profile_data['preferences']
 
-# Profile form in two columns
-col1, col2 = st.columns([2, 1])
+# Quick Actions Section
+with st.container(border=True):
+    st.markdown("### 🌿 Quick Actions")
+    st.markdown("---")
+    col_btn1, col_btn2, col_btn3 = st.columns(3)
+    with col_btn1:
+        if st.button("🌾 View Recommendations", use_container_width=True):
+            st.switch_page("pages/2_Recommendations.py")
+    with col_btn2:
+        if st.button("📊 View Insights", use_container_width=True):
+            st.switch_page("pages/3_Insights.py")
+    with col_btn3:
+        if st.button("📜 View History", use_container_width=True):
+            st.switch_page("pages/4_History.py")
 
-with col1:
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Profile Form - Single Column Layout
+with st.container(border=True):
     with st.form("profile_form"):
         st.markdown("### 🏞️ Farm Information")
         farm_info = st.text_area(
@@ -295,7 +310,7 @@ with col1:
         with col_btn1:
             submitted = st.form_submit_button("💾 Save Profile", use_container_width=True)
         with col_btn2:
-            reset = st.form_submit_button("Reset Form", use_container_width=True, type="secondary")
+            reset = st.form_submit_button("🔄 Reset Form", use_container_width=True, type="secondary")
         
         if submitted:
             # Update session state with form values
@@ -313,11 +328,15 @@ with col1:
             st.session_state.profile_preferences = profile_data['preferences']
             st.rerun()
 
-with col2:
-    # Profile Tips Card
-    with st.container(border=True):
-        st.markdown("### 💡 Profile Tips")
-        st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Profile Tips Card
+with st.container(border=True):
+    st.markdown("### 💡 Profile Tips")
+    st.markdown("---")
+    
+    col_tip1, col_tip2 = st.columns(2)
+    with col_tip1:
         st.markdown("**🎯 Why complete your profile?**")
         st.markdown("""
         - Get personalized recommendations
@@ -325,19 +344,15 @@ with col2:
         - Better insights and analytics
         - Connect with similar farmers
         """)
-        st.markdown("**🔒 Privacy Notice:**")
-        st.caption("Your profile data is stored locally and never shared without your consent.")
-    
-    # Quick Actions Card
-    with st.container(border=True):
-        st.markdown("### 🌿 Quick Actions")
-        st.markdown("---")
-        if st.button("🌾 View Recommendations", use_container_width=True):
-            st.switch_page("pages/2_Recommendations.py")
-        if st.button("📊 View Insights", use_container_width=True):
-            st.switch_page("pages/3_Insights.py")
-        if st.button("📜 View History", use_container_width=True):
-            st.switch_page("pages/4_History.py")
+    with col_tip2:
+        st.markdown("**🔒 Privacy & Security**")
+        st.markdown("""
+        - Data stored locally
+        - Never shared without consent
+        - Full control over your info
+        - Secure and encrypted
+        """)
+    st.caption("💡 Keep your profile updated for the best experience!")
 
 # Footer spacing
 st.markdown("<br><br>", unsafe_allow_html=True)
