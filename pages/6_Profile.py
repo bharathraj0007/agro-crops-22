@@ -132,6 +132,46 @@ st.markdown(
         color: #111827 !important;
     }
     
+    /* Fix Input Fields Visibility */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div > select,
+    input, textarea, select {
+        background: white !important;
+        color: #111827 !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.5rem !important;
+        padding: 0.75rem !important;
+        font-size: 1rem !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus,
+    .stSelectbox > div > div > select:focus {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+        outline: none !important;
+    }
+    
+    /* Input Labels */
+    .stTextInput label,
+    .stTextArea label,
+    .stSelectbox label {
+        color: #374151 !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.5rem !important;
+        display: block !important;
+    }
+    
+    /* Form container */
+    .stForm {
+        background: rgba(255, 255, 255, 0.98) !important;
+        padding: 2rem !important;
+        border-radius: 1rem !important;
+    }
+    
     /* Column spacing */
     div[data-testid="column"] {
         padding: 0.5rem;
