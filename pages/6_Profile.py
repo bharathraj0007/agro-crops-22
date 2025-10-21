@@ -154,6 +154,12 @@ if 'profile_soil_type' not in st.session_state:
     st.session_state.profile_soil_type = "Loamy"
 if 'profile_preferences' not in st.session_state:
     st.session_state.profile_preferences = ""
+if 'profile_farm_size' not in st.session_state:
+    st.session_state.profile_farm_size = ""
+if 'profile_location' not in st.session_state:
+    st.session_state.profile_location = ""
+if 'profile_irrigation' not in st.session_state:
+    st.session_state.profile_irrigation = "Drip Irrigation"
 
 # Use the shared sidebar and header components for consistency
 # authenticated_sidebar()
@@ -266,66 +272,136 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # Profile Form - Single Column Layout
 with st.container(border=True):
+    st.markdown("## 📝 Farm Profile")
+    st.markdown("---")
+    
     with st.form("profile_form"):
-        st.markdown("### 🏞️ Farm Information")
+        # Basic Farm Information
+        st.markdown("### 🏞️ Basic Information")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            farm_location = st.text_input(
+                "Farm Location *",
+                value=st.session_state.profile_location,
+                placeholder="e.g., Bangalore Rural, Karnataka",
+                help="Enter your farm's location (city, district, state)",
+                key="profile_location_input"
+            )
+        with col2:
+            farm_size = st.text_input(
+                "Farm Size",
+                value=st.session_state.profile_farm_size,
+                placeholder="e.g., 5 acres, 2 hectares",
+                help="Enter the size of your farm",
+                key="profile_farm_size_input"
+            )
+        
         farm_info = st.text_area(
             "Farm Description",
             value=st.session_state.profile_farm_info,
-            placeholder="Describe your farm: location, size, main crops, etc.",
-            height=120,
-            help="Provide details about your farm that can help with better recommendations",
+            placeholder="Describe your farm: main crops, farming experience, challenges, etc.",
+            height=100,
+            help="Provide additional details about your farm",
             key="profile_farm_info_input"
         )
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("### 🧩 Soil Type")
-        soil_options = ["Loamy", "Sandy", "Clay", "Silty", "Peaty", "Chalky"]
-        # Ensure the index is valid
-        try:
-            current_soil_index = soil_options.index(st.session_state.profile_soil_type)
-        except ValueError:
-            current_soil_index = 0 # Default to Loamy if not found
-            
-        soil_type = st.selectbox(
-            "Primary Soil Type",
-            options=soil_options,
-            index=current_soil_index,
-            help="Select the predominant soil type on your farm",
-            key="profile_soil_type_input"
-        )
+        st.markdown("---")
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("### ⚙️ Farming Preferences")
+        # Soil and Irrigation
+        st.markdown("### 🧩 Soil & Irrigation Details")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            soil_options = ["Loamy", "Sandy", "Clay", "Silty", "Peaty", "Chalky", "Black Soil", "Red Soil", "Alluvial"]
+            try:
+                current_soil_index = soil_options.index(st.session_state.profile_soil_type)
+            except ValueError:
+                current_soil_index = 0
+                
+            soil_type = st.selectbox(
+                "Primary Soil Type *",
+                options=soil_options,
+                index=current_soil_index,
+                help="Select the predominant soil type on your farm",
+                key="profile_soil_type_input"
+            )
+        
+        with col2:
+            irrigation_options = [
+                "Drip Irrigation",
+                "Sprinkler Irrigation", 
+                "Flood Irrigation",
+                "Furrow Irrigation",
+                "Rain-fed",
+                "Mixed Methods",
+                "Other"
+            ]
+            try:
+                current_irrigation_index = irrigation_options.index(st.session_state.profile_irrigation)
+            except ValueError:
+                current_irrigation_index = 0
+                
+            irrigation_type = st.selectbox(
+                "Irrigation Method",
+                options=irrigation_options,
+                index=current_irrigation_index,
+                help="Select your primary irrigation method",
+                key="profile_irrigation_input"
+            )
+        
+        st.markdown("---")
+        
+        # Farming Preferences
+        st.markdown("### ⚙️ Farming Preferences & Practices")
+        
         preferences = st.text_area(
-            "Your Preferences",
+            "Your Farming Philosophy",
             value=st.session_state.profile_preferences,
-            placeholder="e.g., Organic farming, water conservation, sustainable practices...",
+            placeholder="e.g., Organic farming, water conservation, sustainable practices, crop rotation, etc.",
             height=100,
-            help="Share your farming philosophy and preferences",
+            help="Share your farming philosophy, preferences, and practices",
             key="profile_preferences_input"
         )
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        col_btn1, col_btn2 = st.columns(2)
+        st.markdown("---")
+        st.caption("* Required fields")
+        
+        # Form buttons
+        col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 1])
         with col_btn1:
-            submitted = st.form_submit_button("💾 Save Profile", use_container_width=True)
+            st.markdown("")  # Spacer
         with col_btn2:
-            reset = st.form_submit_button("🔄 Reset Form", use_container_width=True, type="secondary")
+            reset = st.form_submit_button("🔄 Reset", use_container_width=True, type="secondary")
+        with col_btn3:
+            submitted = st.form_submit_button("💾 Save Profile", use_container_width=True, type="primary")
         
         if submitted:
-            # Update session state with form values
-            st.session_state.profile_farm_info = farm_info
-            st.session_state.profile_soil_type = soil_type
-            st.session_state.profile_preferences = preferences
-            
-            db_functions.save_profile_data(farm_info, soil_type, preferences)
-            st.success("✅ Your profile has been saved successfully!")
-            st.rerun()
+            # Validate required fields
+            if not farm_location:
+                st.error("❌ Please enter your farm location.")
+            else:
+                # Update session state with form values
+                st.session_state.profile_farm_info = farm_info
+                st.session_state.profile_soil_type = soil_type
+                st.session_state.profile_preferences = preferences
+                st.session_state.profile_farm_size = farm_size
+                st.session_state.profile_location = farm_location
+                st.session_state.profile_irrigation = irrigation_type
+                
+                db_functions.save_profile_data(farm_info, soil_type, preferences)
+                st.success("✅ Your profile has been saved successfully!")
+                st.balloons()
+                st.rerun()
         elif reset:
             # Reset session state to default values
-            st.session_state.profile_farm_info = profile_data['farm_info']
-            st.session_state.profile_soil_type = profile_data['soil_type']
-            st.session_state.profile_preferences = profile_data['preferences']
+            st.session_state.profile_farm_info = profile_data.get('farm_info', '')
+            st.session_state.profile_soil_type = profile_data.get('soil_type', 'Loamy')
+            st.session_state.profile_preferences = profile_data.get('preferences', '')
+            st.session_state.profile_farm_size = ""
+            st.session_state.profile_location = ""
+            st.session_state.profile_irrigation = "Drip Irrigation"
+            st.info("🔄 Form has been reset to default values.")
             st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True)
