@@ -18,71 +18,17 @@ st.set_page_config(page_title="User Profile", page_icon="👤", layout="wide", i
 setup_page(
     title="Profile",
     icon="👤",
-    background_image="https://images.unsplash.com/photo-1595433707802-6b2626ef1c91?q=80&w=2080&auto=format&fit=crop",
+    background_image="https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=2070&auto=format&fit=crop",
     page_class="profile-page"
 )
 
-# Add beautiful background image for Profile page
+# Page-specific styling
 st.markdown(
     """
     <style>
-    /* Main App Background for Profile Page - Farmer Portrait Theme */
-    .stApp {
-        position: relative;
-        background: 
-            linear-gradient(135deg, rgba(219, 234, 254, 0.90), rgba(191, 219, 254, 0.85)),
-            #dbeafe;
-        background-attachment: fixed;
-    }
-    
-    /* Background Image Layer - Farmer Theme */
-    .stApp::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 0;
-        background-image: url("https://images.unsplash.com/photo-1595433707802-6b2626ef1c91?q=80&w=2080&auto=format&fit=crop");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        opacity: 0.50;
-        filter: brightness(1.2) saturate(1.05);
-    }
-    
-    /* Static gradient overlay */
-    .stApp::after {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-        background: rgba(219, 234, 254, 0.35);
-        pointer-events: none;
-    }
-    
-    /* App View Container */
-    [data-testid="stAppViewContainer"] {
-        background: transparent;
-        position: relative;
-        z-index: 2;
-    }
-    
-    /* Main content area */
-    .main .block-container {
-        background: transparent;
-        padding: 2rem 1rem;
-        position: relative;
-        z-index: 3;
-    }
-    
-    /* Profile Header */
+    /* Profile Header Styling */
     .profile-header {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95)) !important;
+        background: linear-gradient(135deg, #10b981, #059669) !important;
         padding: 3rem 2rem !important;
         border-radius: 1.5rem !important;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
@@ -91,77 +37,105 @@ st.markdown(
         border: none !important;
     }
     
-    /* Headings */
-    .stApp h2, .stApp h3 {
-        background: rgba(255, 255, 255, 0.98) !important;
-        padding: 1rem 1.5rem;
-        border-radius: 1rem;
-        border-left: 5px solid #3b82f6 !important;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-        color: #111827 !important;
-        margin-bottom: 1rem;
-    }
-    
-    /* Cards and Containers */
-    div[data-testid="stVerticalBlock"] > div,
-    div[data-testid="stExpander"],
-    .stForm {
-        background: rgba(255, 255, 255, 0.98) !important;
-        border-radius: 1.25rem !important;
+    .profile-header h1 {
+        background: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
         border: none !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
-        padding: 1.5rem;
-    }
-    
-    /* Buttons */
-    .stButton > button {
-        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
         color: white !important;
-        border: none !important;
-        border-radius: 0.75rem !important;
-        padding: 0.75rem 2rem !important;
-        font-weight: 600 !important;
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
-        transition: transform 0.2s ease !important;
+        margin: 0.5rem 0 !important;
     }
     
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4) !important;
-        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    .profile-header p {
+        background: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
     }
     
-    /* Input Fields */
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea,
-    .stSelectbox > div > div > select {
-        background: rgba(255, 255, 255, 0.98) !important;
-        border: none !important;
-        border-radius: 0.75rem !important;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
-    }
-    
-    /* Stats/Metrics */
-    div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.98) !important;
+    /* Stat Cards */
+    .stat-card {
+        background: rgba(255, 255, 255, 0.98);
         padding: 1.5rem;
         border-radius: 1rem;
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-        border: none !important;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
-    /* Remove all borders */
-    div[data-testid="stVerticalBlock"] > div,
-    section, section > div {
-        border: none !important;
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 32px rgba(16, 185, 129, 0.2);
     }
     
-    /* Custom Scrollbar */
-    *::-webkit-scrollbar { width: 8px !important; }
-    *::-webkit-scrollbar-track { background: rgba(59, 130, 246, 0.05) !important; border-radius: 10px !important; }
-    *::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.3) !important; border-radius: 10px !important; }
-    *::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.5) !important; }
-    * { scrollbar-width: thin !important; scrollbar-color: rgba(59, 130, 246, 0.3) rgba(59, 130, 246, 0.05) !important; }
+    .stat-card h3 {
+        background: none !important;
+        padding: 0 !important;
+        margin: 0.5rem 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        color: #10b981 !important;
+        font-size: 1.8rem !important;
+    }
+    
+    .stat-card p {
+        background: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    
+    /* Section Cards */
+    .section-card {
+        background: rgba(255, 255, 255, 0.98);
+        padding: 1.5rem;
+        border-radius: 1.25rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+    
+    .section-card h3 {
+        background: none !important;
+        padding: 0 !important;
+        margin: 0 0 1rem 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        color: #10b981 !important;
+    }
+    
+    .section-card p, .section-card ul {
+        background: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        color: #374151;
+    }
+    
+    .section-card ul {
+        padding-left: 1.5rem !important;
+    }
+    
+    .section-card li {
+        margin: 0.5rem 0;
+        color: #374151;
+    }
+    
+    /* Form Section Headings */
+    .stForm h3 {
+        background: none !important;
+        padding: 0 !important;
+        margin: 1rem 0 0.5rem 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-left: 4px solid #10b981 !important;
+        padding-left: 1rem !important;
+        color: #111827 !important;
+    }
+    
+    /* Column spacing */
+    div[data-testid="column"] {
+        padding: 0.5rem;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -207,54 +181,58 @@ except:
     total_recs = 0
     unique_crops = 0
 
-st.markdown('<div class="profile-stats">', unsafe_allow_html=True)
+# Profile stats with proper containers
 col1, col2, col3, col4 = st.columns(4)
+role = st.session_state.get('role', 'User')
+
 with col1:
-    st.markdown(
-        f"""
-        <div class="stat-card">
-            <div style="font-size: 2rem;">🎯</div>
-            <h3 style="margin: 0.5rem 0; color: var(--primary);">{total_recs}</h3>
-            <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">Total Recommendations</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    with st.container(border=True):
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎯</div>
+                <h3 style="margin: 0.5rem 0; color: #10b981; background: none !important; padding: 0 !important; box-shadow: none !important; border: none !important;">{total_recs}</h3>
+                <p style="margin: 0; color: #6b7280; font-size: 0.9rem; background: none !important; padding: 0 !important; box-shadow: none !important;">Total Recommendations</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 with col2:
-    st.markdown(
-        f"""
-        <div class="stat-card">
-            <div style="font-size: 2rem;">🌾</div>
-            <h3 style="margin: 0.5rem 0; color: var(--primary);">{unique_crops}</h3>
-            <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">Unique Crops Tried</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    with st.container(border=True):
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🌾</div>
+                <h3 style="margin: 0.5rem 0; color: #10b981; background: none !important; padding: 0 !important; box-shadow: none !important; border: none !important;">{unique_crops}</h3>
+                <p style="margin: 0; color: #6b7280; font-size: 0.9rem; background: none !important; padding: 0 !important; box-shadow: none !important;">Unique Crops Tried</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 with col3:
-    st.markdown(
-        """
-        <div class="stat-card">
-            <div style="font-size: 2rem;">🏆</div>
-            <h3 style="margin: 0.5rem 0; color: var(--primary);">Active</h3>
-            <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">Account Status</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    with st.container(border=True):
+        st.markdown(
+            """
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🏆</div>
+                <h3 style="margin: 0.5rem 0; color: #10b981; background: none !important; padding: 0 !important; box-shadow: none !important; border: none !important;">Active</h3>
+                <p style="margin: 0; color: #6b7280; font-size: 0.9rem; background: none !important; padding: 0 !important; box-shadow: none !important;">Account Status</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 with col4:
-    role = st.session_state.get('role', 'User')
-    st.markdown(
-        f"""
-        <div class="stat-card">
-            <div style="font-size: 2rem;">👤</div>
-            <h3 style="margin: 0.5rem 0; color: var(--primary);">{role}</h3>
-            <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">User Role</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-st.markdown('</div>', unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">👤</div>
+                <h3 style="margin: 0.5rem 0; color: #10b981; background: none !important; padding: 0 !important; box-shadow: none !important; border: none !important;">{role}</h3>
+                <p style="margin: 0; color: #6b7280; font-size: 0.9rem; background: none !important; padding: 0 !important; box-shadow: none !important;">User Role</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -336,37 +314,34 @@ with col1:
             st.rerun()
 
 with col2:
-    st.markdown(
-        """
-        <div class="section-card">
-            <h3>💡 Profile Tips</h3>
-            <br>
-            <p><strong>🎯 Why complete your profile?</strong></p>
-            <ul style="padding-left: 1.5rem;">
-                <li>Get personalized recommendations</li>
-                <li>Track your farming journey</li>
-                <li>Better insights and analytics</li>
-                <li>Connect with similar farmers</li>
-            </ul>
-            <br>
-            <p><strong>🔒 Privacy Notice:</strong></p>
-            <p style="font-size: 0.9rem; color: var(--text-light);">Your profile data is stored locally and never shared without your consent.</p>
-        </div>
-        <br>
-        <div class="section-card" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7);">
-            <h3>🌿 Quick Actions</h3>
-            <br>
-        """,
-        unsafe_allow_html=True
-    )
-    if st.button("🌾 View Recommendations", use_container_width=True):
-        st.switch_page("pages/2_Recommendations.py")
-    if st.button("📊 View Insights", use_container_width=True):
-        st.switch_page("pages/3_Insights.py")
-    if st.button("📜 View History", use_container_width=True):
-        st.switch_page("pages/4_History.py")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Profile Tips Card
+    with st.container(border=True):
+        st.markdown("### 💡 Profile Tips")
+        st.markdown("---")
+        st.markdown("**🎯 Why complete your profile?**")
+        st.markdown("""
+        - Get personalized recommendations
+        - Track your farming journey
+        - Better insights and analytics
+        - Connect with similar farmers
+        """)
+        st.markdown("**🔒 Privacy Notice:**")
+        st.caption("Your profile data is stored locally and never shared without your consent.")
+    
+    # Quick Actions Card
+    with st.container(border=True):
+        st.markdown("### 🌿 Quick Actions")
+        st.markdown("---")
+        if st.button("🌾 View Recommendations", use_container_width=True):
+            st.switch_page("pages/2_Recommendations.py")
+        if st.button("📊 View Insights", use_container_width=True):
+            st.switch_page("pages/3_Insights.py")
+        if st.button("📜 View History", use_container_width=True):
+            st.switch_page("pages/4_History.py")
+
+# Footer spacing
+st.markdown("<br><br>", unsafe_allow_html=True)
 
 # Close page wrapper
-st.markdown('</div>', unsafe_allow_html=True)
+close_page_div()
 
