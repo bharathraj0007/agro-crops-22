@@ -144,9 +144,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Set page header
-custom_header("Dashboard")
-
 # Add custom CSS for enhanced dashboard design
 st.markdown("""
 <style>
