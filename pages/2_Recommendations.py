@@ -1320,51 +1320,54 @@ with st.container(border=True):
     if 'selected_location_name' not in st.session_state:
         st.session_state.selected_location_name = ""
 
-    col1, col2 = st.columns([4, 1])
+    # Show current selected location
+    if st.session_state.selected_location_name:
+        st.info(f"📍 **Selected:** {st.session_state.selected_location_name}")
     
-    with col1:
-        search_query = st.text_input("Search for a location", value=st.session_state.search_query, key="location_search")
+    search_query = st.text_input("Search for a location", placeholder="Enter city, address, or coordinates")
     
-    with col2:
-        sync_button = st.button("🔄", help="Sync with map selection", type="secondary")
-        if sync_button and st.session_state.selected_location_name:
-            st.session_state.search_query = st.session_state.selected_location_name
-            st.rerun()
-    
-    # Handle search submission
-    if search_query and search_query != st.session_state.search_query:
-        st.session_state.search_query = search_query
+    # Handle search submission only on Enter
+    if search_query and search_query != st.session_state.get('last_search', ''):
+        st.session_state.last_search = search_query
         try:
             geolocator = Nominatim(user_agent="crop_recommender")
             location = geolocator.geocode(search_query)
             if location: 
                 st.session_state.lat, st.session_state.lon = location.latitude, location.longitude
-                st.session_state.selected_location_name = search_query
-                st.rerun()
-        except Exception: 
-            st.warning("Geocoding failed.")
-
-    # Show current selected location
-    if st.session_state.selected_location_name:
-        st.write(f"**Selected:** {st.session_state.selected_location_name}")
+                st.session_state.selected_location_name = location.address
+                st.success("✅ Location found!")
+            else:
+                st.warning("⚠️ Location not found. Try a different search.")
+        except Exception as e: 
+            st.error(f"Geocoding failed: {str(e)}")
 
     # Create the map
     m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=10)
     folium.Marker([st.session_state.lat, st.session_state.lon]).add_to(m)
     
+    # Store previous coordinates to detect actual changes
+    if 'prev_lat' not in st.session_state:
+        st.session_state.prev_lat = st.session_state.lat
+        st.session_state.prev_lon = st.session_state.lon
+    
     map_data = st_folium(m, height=350, use_container_width=True, key="map")
     
-    # Handle map click
+    # Handle map click - only update if coordinates actually changed
     if map_data and map_data.get("last_clicked"):
         clicked_lat, clicked_lon = map_data["last_clicked"]["lat"], map_data["last_clicked"]["lng"]
         
-        if (st.session_state.lat, st.session_state.lon) != (clicked_lat, clicked_lon):
+        # Check if coordinates changed significantly (avoid float precision issues)
+        lat_changed = abs(st.session_state.prev_lat - clicked_lat) > 0.0001
+        lon_changed = abs(st.session_state.prev_lon - clicked_lon) > 0.0001
+        
+        if lat_changed or lon_changed:
             st.session_state.lat, st.session_state.lon = clicked_lat, clicked_lon
+            st.session_state.prev_lat, st.session_state.prev_lon = clicked_lat, clicked_lon
             
             # Reverse geocode to get location name
             try:
                 geolocator = Nominatim(user_agent="crop_recommender")
-                location = geolocator.reverse(f"{clicked_lat}, {clicked_lon}", exactly_one=True)
+                location = geolocator.reverse(f"{clicked_lat}, {clicked_lon}", exactly_one=True, timeout=5)
                 if location and location.address:
                     st.session_state.selected_location_name = location.address
                 else:
@@ -1420,17 +1423,30 @@ with st.container(border=True):
 with st.container(border=True):
     st.subheader("✅ Recommended Crops")
     if "recommendations" not in st.session_state: st.session_state.recommendations = []
-    if submitted and crop_model:
-        with st.spinner("Analyzing..."):
-            data = {"nitrogen": n, "phosphorus": p, "potassium": k, "temperature": temp, "humidity": humidity, "ph": ph, "rainfall": rainfall}
-            features = [list(data.values())]
-            probabilities = crop_model.predict_proba(features)[0]
-            crop_probabilities = list(zip(crop_model.classes_, probabilities))
-            top_crops = sorted(crop_probabilities, key=lambda i: i[1], reverse=True)[:3]
-            st.session_state.recommendations = []
-            for crop, confidence in top_crops:
-                rec_id = db_functions.save_recommendation(data, crop.capitalize())
-                st.session_state.recommendations.append({'id': rec_id, 'crop': crop, 'confidence': confidence, 'status': 'new'})
+    
+    if submitted:
+        if not crop_model:
+            st.error("❌ Model not loaded. Cannot generate recommendations.")
+        else:
+            with st.spinner("Analyzing..."):
+                try:
+                    data = {"nitrogen": n, "phosphorus": p, "potassium": k, "temperature": temp, "humidity": humidity, "ph": ph, "rainfall": rainfall}
+                    features = [list(data.values())]
+                    probabilities = crop_model.predict_proba(features)[0]
+                    crop_probabilities = list(zip(crop_model.classes_, probabilities))
+                    top_crops = sorted(crop_probabilities, key=lambda i: i[1], reverse=True)[:3]
+                    st.session_state.recommendations = []
+                    for crop, confidence in top_crops:
+                        try:
+                            rec_id = db_functions.save_recommendation(data, crop.capitalize())
+                        except Exception as db_err:
+                            st.warning(f"Could not save recommendation: {db_err}")
+                            rec_id = None
+                        st.session_state.recommendations.append({'id': rec_id, 'crop': crop, 'confidence': confidence, 'status': 'new'})
+                    st.success("✅ Recommendations generated successfully!")
+                except Exception as e:
+                    st.error(f"❌ Error generating recommendations: {str(e)}")
+                    st.session_state.recommendations = []
     
     if st.session_state.recommendations:
         rec_cols = st.columns(3)
@@ -1448,16 +1464,23 @@ with st.container(border=True):
                 else:
                     st.warning(f"Image not found")
 
-                details = crop_data.CROP_DETAILS.get(rec['crop'].lower(), crop_data.CROP_DETAILS['default'])
+                details = crop_data.CROP_DETAILS.get(rec['crop'].lower(), crop_data.CROP_DETAILS.get('default', {'description': 'N/A', 'water': 'N/A', 'yield': 'N/A'}))
                 st.markdown(f"**{rec['crop'].capitalize()}**")
                 st.markdown(f"<small>Confidence: {rec['confidence']*100:.1f}%</small>", unsafe_allow_html=True)
                 st.markdown(f"<small>{details['description']}</small>", unsafe_allow_html=True)
                 st.markdown(f"<small>💧 Water: {details['water']} | ⚖️ Yield: {details['yield']}</small>", unsafe_allow_html=True)
                 if not is_done:
-                    if st.button("Mark as Done", key=f"done_{rec['id']}"):
-                        db_functions.mark_as_done(rec['id'])
-                        st.session_state.recommendations[i]['status'] = 'done'
-                        st.rerun()
+                    # Only show button if rec_id is valid
+                    if rec.get('id'):
+                        if st.button("Mark as Done", key=f"done_{rec['id']}"):
+                            try:
+                                db_functions.mark_as_done(rec['id'])
+                                st.session_state.recommendations[i]['status'] = 'done'
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Could not mark as done: {e}")
+                    else:
+                        st.info("ℹ️ Not saved to database")
                 else:
                     st.success("✔️ Done")
                 st.markdown('</div>', unsafe_allow_html=True)
