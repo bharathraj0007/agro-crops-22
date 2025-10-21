@@ -22,6 +22,7 @@ import db_functions
 from translations import get_text, get_language_switcher
 from header import custom_header
 from layout_helper import setup_page, close_page_div
+from sidebar import authenticated_sidebar
 
 # Initialize session state
 if 'lang' not in st.session_state:
@@ -414,26 +415,8 @@ if not st.session_state.get('logged_in'):
     st.page_link("app.py", label="Go to Login Page")
     st.stop()
 
-# --- Sidebar Navigation ---
-with st.sidebar:
-    st.markdown("🌱 **AgriAssist**")
-    # Language Switcher
-    # get_language_switcher()
-    # Navigation Links
-    st.page_link("pages/1_Dashboard.py", label=get_text("home"), icon="🏠", disabled=True)
-    st.page_link("pages/2_Recommendations.py", label=get_text("recommendations"), icon="✅")
-    st.page_link("pages/3_Insights.py", label=get_text("insights"), icon="📊")
-    st.page_link("pages/4_History.py", label=get_text("history"), icon="📜")
-    st.page_link("pages/5_Support.py", label=get_text("support"), icon="💬")
-    st.page_link("pages/6_Profile.py", label=get_text("profile"), icon="👤")
-    st.page_link("pages/10_Marketing.py", label="Marketing", icon="📈")
-    st.page_link("pages/11_Govt_Schemes.py", label=get_text("government_schemes"), icon="🏦")
-    st.page_link("pages/0_Dr.Plant.py", label=get_text("Dr.plant"), icon="🌱")
-
-    if st.button(get_text("logout"), key="dashboard_logout"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
+# --- Use Shared Sidebar ---
+authenticated_sidebar()
 
 # --- HERO SECTION ---
 st.markdown("""
