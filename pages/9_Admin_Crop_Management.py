@@ -12,15 +12,18 @@ import db_functions
 import header
 import crop_data
 from sidebar import authenticated_sidebar
+from layout_helper import setup_page, close_page_div
 
 st.set_page_config(page_title="Crop Management", page_icon="🌿", layout="wide", initial_sidebar_state="expanded")
 
-def load_css(file_name):
-    css_path = os.path.join(ROOT_DIR, file_name)
-    with open(css_path) as f: 
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-load_css("style.css")
+# Setup page with consistent layout
+setup_page(
+    title="Crop Management",
+    icon="🌿",
+    background_image="https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=2070&auto=format&fit=crop",
+    page_class="admin-crops-page",
+    css_file="style.css"
+)
 
 # --- Authentication & Role Check ---
 if not st.session_state.get('logged_in') or st.session_state.get('role') != 'Admin':

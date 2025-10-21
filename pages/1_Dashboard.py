@@ -5,7 +5,6 @@ import os
 import datetime
 import pandas as pd
 import requests
-# from streamlit_extras.metric_cards import style_metric_cards
 
 # --- Path setup ---
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -22,25 +21,22 @@ st.set_page_config(
 import db_functions
 from translations import get_text, get_language_switcher
 from header import custom_header
-
-# Load CSS
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-def load_css(file_name):
-    css_path = os.path.join(ROOT_DIR, file_name)
-    with open(css_path, encoding='utf-8') as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+from layout_helper import setup_page, close_page_div
+from sidebar import authenticated_sidebar
 
 # Initialize session state
 if 'lang' not in st.session_state:
     st.session_state.lang = 'en'
-
-# Initialize session state for any dashboard preferences
 if 'dashboard_preferences' not in st.session_state:
     st.session_state.dashboard_preferences = {}
 
-# Load CSS and set page config
-load_css("style_pro.css")
+# Setup page with consistent layout
+setup_page(
+    title="Dashboard",
+    icon="🌱",
+    background_image="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?q=80&w=2070&auto=format&fit=crop",
+    page_class="dashboard-page"
+)
 
 # Set custom styles for metrics
 st.markdown("""
@@ -148,9 +144,6 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
-# Set page header
-custom_header("Dashboard")
 
 # Add custom CSS for enhanced dashboard design
 st.markdown("""
@@ -422,26 +415,8 @@ if not st.session_state.get('logged_in'):
     st.page_link("app.py", label="Go to Login Page")
     st.stop()
 
-# --- Sidebar Navigation ---
-with st.sidebar:
-    st.markdown("🌱 **AgriAssist**")
-    # Language Switcher
-    # get_language_switcher()
-    # Navigation Links
-    st.page_link("pages/1_Dashboard.py", label=get_text("home"), icon="🏠", disabled=True)
-    st.page_link("pages/2_Recommendations.py", label=get_text("recommendations"), icon="✅")
-    st.page_link("pages/3_Insights.py", label=get_text("insights"), icon="📊")
-    st.page_link("pages/4_History.py", label=get_text("history"), icon="📜")
-    st.page_link("pages/5_Support.py", label=get_text("support"), icon="💬")
-    st.page_link("pages/6_Profile.py", label=get_text("profile"), icon="👤")
-    st.page_link("pages/10_Marketing.py", label="Marketing", icon="📈")
-    st.page_link("pages/11_Govt_Schemes.py", label=get_text("government_schemes"), icon="🏦")
-    st.page_link("pages/0_Dr.Plant.py", label=get_text("Dr.plant"), icon="🌱")
-
-    if st.button(get_text("logout"), key="dashboard_logout"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
+# --- Use Shared Sidebar ---
+authenticated_sidebar()
 
 # --- HERO SECTION ---
 st.markdown("""

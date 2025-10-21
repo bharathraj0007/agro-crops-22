@@ -5,23 +5,24 @@ import os
 import pandas as pd
 
 # --- Correctly set up the path to import shared files ---
-# This script is in the 'pages' folder, so we go up one level to the root
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
 
 import db_functions
 import header
 from sidebar import authenticated_sidebar
+from layout_helper import setup_page, close_page_div
 
 st.set_page_config(page_title="User Management", page_icon="👥", layout="wide", initial_sidebar_state="expanded")
 
-def load_css(file_name):
-    # Correct path to find style.css from the pages subfolder
-    css_path = os.path.join(ROOT_DIR, file_name)
-    with open(css_path) as f: 
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-load_css("style.css")
+# Setup page with consistent layout
+setup_page(
+    title="User Management",
+    icon="👥",
+    background_image="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=2084&auto=format&fit=crop",
+    page_class="admin-users-page",
+    css_file="style.css"
+)
 
 # --- Authentication & Role Check ---
 if not st.session_state.get('logged_in') or st.session_state.get('role') != 'Admin':

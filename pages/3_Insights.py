@@ -5,8 +5,6 @@ import re
 import numpy as np
 import os
 import pandas as pd
-from translations import get_text, get_language_switcher
-from header import custom_header
 
 # Correctly set up the path to import shared files
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -15,12 +13,13 @@ sys.path.append(ROOT_DIR)
 import db_functions
 import crop_data
 from sidebar import authenticated_sidebar
+from translations import get_text, get_language_switcher
+from header import custom_header
+from layout_helper import setup_page, close_page_div
 
-# Initialize session state for language if not already set
+# Initialize session state
 if 'lang' not in st.session_state:
     st.session_state.lang = 'en'
-
-# Initialize session state for any insights preferences
 if 'insights_preferences' not in st.session_state:
     st.session_state.insights_preferences = {}
  
@@ -30,20 +29,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
- 
-def load_css(file_name):
-    """Load and inject CSS styles."""
-    css_path = os.path.join(ROOT_DIR, file_name)
-    try:
-        with open(css_path, 'r', encoding='utf-8') as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning(f"CSS file not found: {file_name}")
 
-load_css("style_pro.css")
-
-# Add page-specific CSS class
-st.markdown('<div class="insights-page">', unsafe_allow_html=True)
+# Setup page with consistent layout
+setup_page(
+    title="Insights",
+    icon="📊",
+    background_image="https://images.unsplash.com/photo-1574943320219-553eb213f72d?q=80&w=2070&auto=format&fit=crop",
+    page_class="insights-page"
+)
  
 # Custom CSS for the Insights page
 st.markdown("""
@@ -163,21 +156,23 @@ def parse_yield(yield_str):
 try:
     history_df = db_functions.get_history()
     if not history_df.empty:
-        # Overview metrics at top
-        st.markdown("### 📊 Overview Metrics")
-        overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
-        
-        with overview_col1:
-            st.metric("📝 Total Records", len(history_df))
-        with overview_col2:
-            unique_crops_count = history_df['crop'].nunique() if 'crop' in history_df.columns else 0
-            st.metric("🌾 Unique Crops", unique_crops_count)
-        with overview_col3:
-            avg_temp = history_df['temperature'].mean() if 'temperature' in history_df.columns else 0
-            st.metric("🌡️ Avg Temperature", f"{avg_temp:.1f}°C")
-        with overview_col4:
-            avg_rainfall = history_df['rainfall'].mean() if 'rainfall' in history_df.columns else 0
-            st.metric("💧 Avg Rainfall", f"{avg_rainfall:.1f}mm")
+        # Overview metrics at top in bordered container
+        with st.container(border=True):
+            st.markdown("### 📊 Overview Metrics")
+            st.markdown("---")
+            overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
+            
+            with overview_col1:
+                st.metric("📝 Total Records", len(history_df))
+            with overview_col2:
+                unique_crops_count = history_df['crop'].nunique() if 'crop' in history_df.columns else 0
+                st.metric("🌾 Unique Crops", unique_crops_count)
+            with overview_col3:
+                avg_temp = history_df['temperature'].mean() if 'temperature' in history_df.columns else 0
+                st.metric("🌡️ Avg Temperature", f"{avg_temp:.1f}°C")
+            with overview_col4:
+                avg_rainfall = history_df['rainfall'].mean() if 'rainfall' in history_df.columns else 0
+                st.metric("💧 Avg Rainfall", f"{avg_rainfall:.1f}mm")
         
         st.markdown("<br>", unsafe_allow_html=True)
         yield_trend = None
@@ -189,58 +184,55 @@ try:
             yield_trend = history_df.groupby('date')['avg_yield'].mean().reset_index()
 
         # Average Soil Conditions
-        st.markdown("### 🧩 Soil Nutrient Analysis")
-        st.markdown('<div class="chart-card">', unsafe_allow_html=True)
-        avg_conditions = history_df[['nitrogen', 'phosphorus', 'potassium', 'ph']].mean()
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric(
-                "🧪 Nitrogen (N)",
-                f"{avg_conditions['nitrogen']:.1f}",
-                help="Average nitrogen content in kg/ha"
-            )
-        with col2:
-            st.metric(
-                "🟠 Phosphorus (P)",
-                f"{avg_conditions['phosphorus']:.1f}",
-                help="Average phosphorus content in kg/ha"
-            )
-        with col3:
-            st.metric(
-                "🟣 Potassium (K)",
-                f"{avg_conditions['potassium']:.1f}",
-                help="Average potassium content in kg/ha"
-            )
-        with col4:
-            st.metric(
-                "⚗️ Soil pH",
-                f"{avg_conditions['ph']:.2f}",
-                help="Average pH level (7 is neutral)"
-            )
-        st.markdown('</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("### 🧩 Soil Nutrient Analysis")
+            st.markdown("---")
+            avg_conditions = history_df[['nitrogen', 'phosphorus', 'potassium', 'ph']].mean()
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric(
+                    "🧪 Nitrogen (N)",
+                    f"{avg_conditions['nitrogen']:.1f}",
+                    help="Average nitrogen content in kg/ha"
+                )
+            with col2:
+                st.metric(
+                    "🟠 Phosphorus (P)",
+                    f"{avg_conditions['phosphorus']:.1f}",
+                    help="Average phosphorus content in kg/ha"
+                )
+            with col3:
+                st.metric(
+                    "🟣 Potassium (K)",
+                    f"{avg_conditions['potassium']:.1f}",
+                    help="Average potassium content in kg/ha"
+                )
+            with col4:
+                st.metric(
+                    "⚗️ Soil pH",
+                    f"{avg_conditions['ph']:.2f}",
+                    help="Average pH level (7 is neutral)"
+                )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Main charts in columns
-        col1, col2 = st.columns(2, gap="large")
+        # Most Recommended Crops Chart - Full Width
+        with st.container(border=True):
+            st.markdown("### 🌾 Most Recommended Crops")
+            st.markdown("---")
+            crop_counts = db_functions.get_crop_counts()
+            st.bar_chart(crop_counts.set_index('crop'), use_container_width=True)
 
-        with col1:
-            with st.container():
-                st.markdown('<div class="chart-card">', unsafe_allow_html=True)
-                st.markdown("<h3>🌾 Most Recommended Crops</h3>", unsafe_allow_html=True)
-                crop_counts = db_functions.get_crop_counts()
-                st.bar_chart(crop_counts.set_index('crop'), use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        with col2:
-            with st.container():
-                st.markdown('<div class="chart-card">', unsafe_allow_html=True)
-                st.markdown("<h3>📈 Potential Yield Trends (tons/ha)</h3>", unsafe_allow_html=True)
-                if yield_trend is not None:
-                    st.line_chart(yield_trend.set_index('date'), use_container_width=True)
-                else:
-                    st.info("Need at least two recommendations to show a yield trend.")
-                st.markdown('</div>', unsafe_allow_html=True)
+        # Yield Trends Chart - Full Width
+        with st.container(border=True):
+            st.markdown("### 📈 Potential Yield Trends (tons/ha)")
+            st.markdown("---")
+            if yield_trend is not None:
+                st.line_chart(yield_trend.set_index('date'), use_container_width=True)
+            else:
+                st.info("Need at least two recommendations to show a yield trend.")
     else:
         # Empty state with action
         st.markdown(
@@ -260,5 +252,8 @@ try:
 except Exception as e:
     st.error(f"❌ Could not load insights. Error: {e}")
 
+# Footer spacing
+st.markdown("<br><br>", unsafe_allow_html=True)
+
 # Close page wrapper
-st.markdown('</div>', unsafe_allow_html=True)
+close_page_div()

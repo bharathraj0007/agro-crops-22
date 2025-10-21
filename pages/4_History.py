@@ -7,25 +7,25 @@ import pandas as pd
 # Correctly set up the path to import shared files
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
+
 import db_functions
 from sidebar import authenticated_sidebar
 from header import custom_header
+from layout_helper import setup_page, close_page_div
 
 st.set_page_config(page_title="Recommendation History", page_icon="📜", layout="wide", initial_sidebar_state="expanded")
 
-# Initialize session state for any history preferences
+# Initialize session state
 if 'history_preferences' not in st.session_state:
     st.session_state.history_preferences = {}
 
-def load_css(file_name):
-    # Correct path to find CSS from the pages subfolder
-    css_path = os.path.join(ROOT_DIR, file_name)
-    with open(css_path, encoding='utf-8') as f: 
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-load_css("style_pro.css")
-
-# Add page-specific CSS class
-st.markdown('<div class="history-page">', unsafe_allow_html=True)
+# Setup page with consistent layout
+setup_page(
+    title="History",
+    icon="📜",
+    background_image="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=2070&auto=format&fit=crop",
+    page_class="history-page"
+)
 
 # Add beautiful background image to the History page
 st.markdown(

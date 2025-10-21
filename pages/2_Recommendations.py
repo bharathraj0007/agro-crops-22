@@ -1,721 +1,3 @@
-# # ---- pages/2_Recommendations.py ----
-# import streamlit as st
-# import joblib
-# from streamlit_folium import st_folium
-# import folium
-# from geopy.geocoders import Nominatim
-# import requests
-# import sys
-# import os
-
-# # --- Correctly set up the path to import shared files ---
-# # This script is in the 'pages' folder, so we go up one level to the root
-# ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# sys.path.append(ROOT_DIR)
-
-# import db_functions
-# import crop_data
-
-# st.set_page_config(page_title="Crop Recommendations", page_icon="✅", layout="wide", initial_sidebar_state="expanded")
-
-# def load_css(file_name):
-#     # Construct the correct, absolute path to the CSS file from the root
-#     css_path = os.path.join(ROOT_DIR, file_name)
-#     with open(css_path) as f: 
-#         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-# load_css("style.css")
-
-# # --- Authentication Check ---
-# if not st.session_state.get('logged_in'):
-#     st.error("You need to be logged in to access this page.")
-#     st.page_link("app.py", label="Go to Login")
-#     st.stop()
-
-# # --- ADD THIS SECTION FOR SIDEBAR NAVIGATION ---
-# # Import and call the function that creates your sidebar navigation
-# # Make sure you have a function like this in one of your shared modules
-# # Create basic sidebar navigation
-# st.sidebar.title("🌱 AgriAssist")
-# st.sidebar.page_link("app.py", label="Home")
-# st.sidebar.page_link("pages/1_Dashboard.py", label="Dashboard")
-# st.sidebar.page_link("pages/2_Recommendations.py", label="Recommendations")
-# st.sidebar.page_link("pages/3_Insights.py", label="Insights")
-# st.sidebar.page_link("pages/4_History.py", label="History")
-# st.sidebar.page_link("pages/5_Support.py", label="Support")
-# st.sidebar.page_link("pages/6_Profile.py", label="Profile")
-
-# # Add admin page for admin users
-# if st.session_state.get('role') == 'Admin':
-#     st.sidebar.page_link("pages/7_Admin_Dashboard.py", label="Admin Dashboard")
-
-# # Logout button
-# if st.sidebar.button("Logout"):
-#     for key in list(st.session_state.keys()):
-#         del st.session_state[key]
-#     st.rerun()
-
-# TIPS = [
-#     "**Soil Testing:** Regularly test your soil to understand its nutrient profile and pH level for accurate recommendations.",
-#     "**Crop Rotation:** Avoid planting the same crop in the same place year after year to manage pests and improve soil health.",
-#     "**Water Management:** Use efficient irrigation methods like drip irrigation to conserve water.",
-#     "**Integrated Pest Management (IPM):** Combine biological, cultural, and chemical practices to manage pests sustainably."
-# ]
-
-# def get_weather(lat, lon):
-#     try:
-#         api_key = st.secrets["OPENWEATHER_API_KEY"]
-#         url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
-#         response = requests.get(url, timeout=5).json()
-#         return {"temperature": response["main"]["temp"], "humidity": response["main"]["humidity"]}
-#     except Exception:
-#         st.warning("Could not fetch live weather data. Using default values.")
-#         return {"temperature": 25.0, "humidity": 70.0}
-
-# try:
-#     # Construct the correct, absolute path to the model file from the root
-#     model_path = os.path.join(ROOT_DIR, 'crop_model.joblib')
-#     crop_model = joblib.load(model_path)
-# except Exception:
-#     st.error("crop_model.joblib not found in the main project folder.")
-#     crop_model = None
-
-# st.title("🌾 Crop Recommendation Tool")
-# st.markdown(
-#     "<p style='font-size: 1.1rem; color: #059669; margin-bottom: 2rem; font-weight: 500;'>"
-#     "Get AI-powered crop recommendations based on soil conditions, weather, and location data.</p>",
-#     unsafe_allow_html=True
-# )
-
-# with st.expander("🔎 Explore Crops by Season or Type"):
-#     col1, col2 = st.columns(2)
-#     with col1:
-#         season = st.selectbox("Filter by Season", options=list(crop_data.CROP_FILTER_DATA['seasons'].keys()))
-#         st.markdown(f"<div class='crop-list'>{' | '.join(crop_data.CROP_FILTER_DATA['seasons'][season])}</div>", unsafe_allow_html=True)
-#     with col2:
-#         crop_type = st.selectbox("Filter by Type", options=list(crop_data.CROP_FILTER_DATA['types'].keys()))
-#         st.markdown(f"<div class='crop-list'>{' | '.join(crop_data.CROP_FILTER_DATA['types'][crop_type])}</div>", unsafe_allow_html=True)
-
-# # --- Location Selection Card ---
-# with st.container(border=True):
-#     st.subheader("📍 Location Selection")
-#     search_query = st.text_input("Search for a location")
-#     if 'lat' not in st.session_state: st.session_state.lat, st.session_state.lon = 12.9716, 77.5946
-#     if search_query:
-#         try:
-#             geolocator = Nominatim(user_agent="crop_recommender")
-#             location = geolocator.geocode(search_query)
-#             if location: st.session_state.lat, st.session_state.lon = location.latitude, location.longitude
-#         except Exception: st.warning("Geocoding failed.")
-#     m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=10)
-#     folium.Marker([st.session_state.lat, st.session_state.lon]).add_to(m)
-#     map_data = st_folium(m, height=350, use_container_width=True)
-#     if map_data and map_data.get("last_clicked"):
-#         clicked_lat, clicked_lon = map_data["last_clicked"]["lat"], map_data["last_clicked"]["lng"]
-#         if (st.session_state.lat, st.session_state.lon) != (clicked_lat, clicked_lon):
-#             st.session_state.lat, st.session_state.lon = clicked_lat, clicked_lon
-#             st.rerun()
-
-# # --- Input Parameters Card ---
-# weather_data = get_weather(st.session_state.lat, st.session_state.lon)
-# with st.container(border=True):
-#     st.subheader("🧪 Input Parameters")
-#     form_col1, form_col2 = st.columns(2)
-#     with form_col1:
-#         n, p, k = st.slider("Nitrogen (N)", 0, 140, 50), st.slider("Phosphorus (P)", 5, 145, 50), st.slider("Potassium (K)", 5, 205, 50)
-#     with form_col2:
-#         temp_val = max(8.0, min(50.0, float(weather_data["temperature"])))
-#         hum_val = max(14.0, min(100.0, float(weather_data["humidity"])))
-#         temp = st.slider("Temperature (°C)", 8.0, 50.0, temp_val, 0.1)
-#         humidity = st.slider("Humidity (%)", 14.0, 100.0, hum_val, 0.1)
-#         ph = st.slider("Soil pH", 3.5, 9.9, 6.5, 0.1)
-#     rainfall = st.slider("Rainfall (mm)", 20.0, 300.0, 100.0, 0.1)
-#     submitted = st.button("Get Recommendations")
-
-# # --- Tips Section ---
-# with st.container(border=True):
-#     st.subheader("💡 Agricultural Tips")
-#     for tip in TIPS: st.markdown(f"<div class='tip-item'>{tip}</div>", unsafe_allow_html=True)
-
-# # --- Recommended Crops Card (at the bottom) ---
-# with st.container(border=True):
-#     st.subheader("✅ Recommended Crops")
-#     if "recommendations" not in st.session_state: st.session_state.recommendations = []
-#     if submitted and crop_model:
-#         with st.spinner("Analyzing..."):
-#             data = {"nitrogen": n, "phosphorus": p, "potassium": k, "temperature": temp, "humidity": humidity, "ph": ph, "rainfall": rainfall}
-#             features = [list(data.values())]
-#             probabilities = crop_model.predict_proba(features)[0]
-#             crop_probabilities = list(zip(crop_model.classes_, probabilities))
-#             top_crops = sorted(crop_probabilities, key=lambda i: i[1], reverse=True)[:3]
-#             st.session_state.recommendations = []
-#             for crop, confidence in top_crops:
-#                 rec_id = db_functions.save_recommendation(data, crop.capitalize())
-#                 st.session_state.recommendations.append({'id': rec_id, 'crop': crop, 'confidence': confidence, 'status': 'new'})
-    
-#     if st.session_state.recommendations:
-#         rec_cols = st.columns(3)
-#         for i, rec in enumerate(st.session_state.recommendations):
-#             with rec_cols[i]:
-#                 is_done = (rec['status'] == 'done')
-#                 done_class = "done" if is_done else ""
-#                 st.markdown(f'<div class="recommendation-item {done_class}">', unsafe_allow_html=True)
-                
-#                 relative_image_path = crop_data.CROP_IMAGES.get(rec['crop'].lower(), crop_data.CROP_IMAGES['default'])
-#                 full_image_path = os.path.join(ROOT_DIR, relative_image_path)
-                
-#                 if os.path.exists(full_image_path):
-#                     st.image(full_image_path)
-#                 else:
-#                     st.warning(f"Image not found")
-
-#                 details = crop_data.CROP_DETAILS.get(rec['crop'].lower(), crop_data.CROP_DETAILS['default'])
-#                 st.markdown(f"**{rec['crop'].capitalize()}**")
-#                 st.markdown(f"<small>Confidence: {rec['confidence']*100:.1f}%</small>", unsafe_allow_html=True)
-#                 st.markdown(f"<small>{details['description']}</small>", unsafe_allow_html=True)
-#                 st.markdown(f"<small>💧 Water: {details['water']} | ⚖️ Yield: {details['yield']}</small>", unsafe_allow_html=True)
-#                 if not is_done:
-#                     if st.button("Mark as Done", key=f"done_{rec['id']}"):
-#                         db_functions.mark_as_done(rec['id'])
-#                         st.session_state.recommendations[i]['status'] = 'done'
-#                         st.rerun()
-#                 else:
-#                     st.success("✔️ Done")
-#                 st.markdown('</div>', unsafe_allow_html=True)
-#     else:
-#         st.info("Results will appear here.")
-
-# ---- pages/2_Recommendations.py ----
-# import streamlit as st
-# import joblib
-# from streamlit_folium import st_folium
-# import folium
-# from geopy.geocoders import Nominatim
-# import requests
-# import sys
-# import os
-# import warnings
-# import traceback
-
-# # Suppress warnings
-# warnings.filterwarnings('ignore')
-
-# # --- Correctly set up the path to import shared files ---
-# ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# sys.path.append(ROOT_DIR)
-
-# import db_functions
-# import crop_data
-
-# st.set_page_config(
-#     page_title="Crop Recommendations", 
-#     page_icon="✅", 
-#     layout="wide", 
-#     initial_sidebar_state="expanded"
-# )
-
-# def load_css(file_name):
-#     css_path = os.path.join(ROOT_DIR, file_name)
-#     try:
-#         with open(css_path) as f: 
-#             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-#     except FileNotFoundError:
-#         st.warning(f"CSS file not found: {css_path}")
-
-# load_css("style.css")
-
-# # --- Authentication Check ---
-# if not st.session_state.get('logged_in'):
-#     st.error("You need to be logged in to access this page.")
-#     st.page_link("app.py", label="Go to Login")
-#     st.stop()
-
-# # --- Sidebar Navigation ---
-# st.sidebar.title("🌱 AgriAssist")
-# st.sidebar.page_link("app.py", label="Home")
-# st.sidebar.page_link("pages/1_Dashboard.py", label="Dashboard")
-# st.sidebar.page_link("pages/2_Recommendations.py", label="Recommendations", disabled=True)
-# st.sidebar.page_link("pages/3_Insights.py", label="Insights")
-# st.sidebar.page_link("pages/4_History.py", label="History")
-# st.sidebar.page_link("pages/5_Support.py", label="Support")
-# st.sidebar.page_link("pages/6_Profile.py", label="Profile")
-
-# if st.session_state.get('role') == 'Admin':
-#     st.sidebar.page_link("pages/7_Admin_Dashboard.py", label="Admin Dashboard")
-
-# st.sidebar.markdown("---")
-# st.sidebar.markdown(f"**User:** {st.session_state.get('username', 'Unknown')}")
-
-# if st.sidebar.button("Logout", type="primary"):
-#     for key in list(st.session_state.keys()):
-#         del st.session_state[key]
-#     st.rerun()
-
-# TIPS = [
-#     "**Soil Testing:** Regularly test your soil to understand its nutrient profile and pH level for accurate recommendations.",
-#     "**Crop Rotation:** Avoid planting the same crop in the same place year after year to manage pests and improve soil health.",
-#     "**Water Management:** Use efficient irrigation methods like drip irrigation to conserve water.",
-#     "**Integrated Pest Management (IPM):** Combine biological, cultural, and chemical practices to manage pests sustainably."
-# ]
-
-# def get_weather(lat, lon):
-#     try:
-#         api_key = st.secrets.get("OPENWEATHER_API_KEY", "")
-#         if not api_key:
-#             return {"temperature": 25.0, "humidity": 70.0}
-            
-#         url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
-#         response = requests.get(url, timeout=10).json()
-#         return {"temperature": response["main"]["temp"], "humidity": response["main"]["humidity"]}
-#     except Exception:
-#         return {"temperature": 25.0, "humidity": 70.0}
-
-# def create_map(lat, lon):
-#     try:
-#         m = folium.Map(location=[lat, lon], zoom_start=10)
-#         folium.Marker([lat, lon]).add_to(m)
-#         return m
-#     except Exception:
-#         return None
-
-# # Load model safely
-# try:
-#     model_path = os.path.join(ROOT_DIR, 'crop_model.joblib')
-#     crop_model = joblib.load(model_path)
-# except Exception as e:
-#     st.error(f"Model loading error: {e}")
-#     crop_model = None
-
-# st.title("Crop Recommendation Tool")
-
-# try:
-#     # Main content
-#     with st.expander("🔎 Explore Crops by Season or Type"):
-#         col1, col2 = st.columns(2)
-#         with col1:
-#             season = st.selectbox("Filter by Season", options=list(crop_data.CROP_FILTER_DATA['seasons'].keys()))
-#             st.markdown(f"<div class='crop-list'>{' | '.join(crop_data.CROP_FILTER_DATA['seasons'][season])}</div>", unsafe_allow_html=True)
-#         with col2:
-#             crop_type = st.selectbox("Filter by Type", options=list(crop_data.CROP_FILTER_DATA['types'].keys()))
-#             st.markdown(f"<div class='crop-list'>{' | '.join(crop_data.CROP_FILTER_DATA['types'][crop_type])}</div>", unsafe_allow_html=True)
-
-#     # Initialize session state for location
-#     if 'lat' not in st.session_state:
-#         st.session_state.lat, st.session_state.lon = 12.9716, 77.5946
-
-#     # Location Selection
-#     with st.container(border=True):
-#         st.subheader("📍 Location Selection")
-#         search_query = st.text_input("Search for a location")
-        
-#         if search_query:
-#             try:
-#                 geolocator = Nominatim(user_agent="crop_recommender_app")
-#                 location = geolocator.geocode(search_query, timeout=10)
-#                 if location:
-#                     st.session_state.lat, st.session_state.lon = location.latitude, location.longitude
-#                     st.success(f"Location found: {location.address}")
-#             except Exception:
-#                 st.warning("Geocoding service unavailable. Using default location.")
-        
-#         m = create_map(st.session_state.lat, st.session_state.lon)
-#         if m:
-#             map_data = st_folium(m, height=350, use_container_width=True, key="main_map")
-#             if map_data and map_data.get("last_clicked"):
-#                 clicked_lat = map_data["last_clicked"]["lat"]
-#                 clicked_lon = map_data["last_clicked"]["lng"]
-#                 st.session_state.lat, st.session_state.lon = clicked_lat, clicked_lon
-#                 st.rerun()
-#         else:
-#             st.error("Failed to load map")
-
-#     # Input Parameters
-#     weather_data = get_weather(st.session_state.lat, st.session_state.lon)
-#     with st.container(border=True):
-#         st.subheader("🧪 Input Parameters")
-#         form_col1, form_col2 = st.columns(2)
-#         with form_col1:
-#             n = st.slider("Nitrogen (N)", 0, 140, 50, step=1)
-#             p = st.slider("Phosphorus (P)", 5, 145, 50, step=1)
-#             k = st.slider("Potassium (K)", 5, 205, 50, step=1)
-#         with form_col2:
-#             temp_val = max(8.0, min(50.0, float(weather_data["temperature"])))
-#             hum_val = max(14.0, min(100.0, float(weather_data["humidity"])))
-#             temp = st.slider("Temperature (°C)", 8.0, 50.0, temp_val, 0.1, step=0.1)
-#             humidity = st.slider("Humidity (%)", 14.0, 100.0, hum_val, 0.1, step=0.1)
-#             ph = st.slider("Soil pH", 3.5, 9.9, 6.5, 0.1, step=0.1)
-#         rainfall = st.slider("Rainfall (mm)", 20.0, 300.0, 100.0, 0.1, step=0.1)
-#         submitted = st.button("Get Recommendations", type="primary")
-
-#     # Tips Section
-#     with st.container(border=True):
-#         st.subheader("💡 Agricultural Tips")
-#         for tip in TIPS: 
-#             st.markdown(f"<div class='tip-item'>{tip}</div>", unsafe_allow_html=True)
-
-#     # Recommendations
-#     with st.container(border=True):
-#         st.subheader("✅ Recommended Crops")
-        
-#         if "recommendations" not in st.session_state:
-#             st.session_state.recommendations = []
-            
-#         if submitted and crop_model:
-#             with st.spinner("Analyzing soil and weather conditions..."):
-#                 try:
-#                     data = {
-#                         "nitrogen": n, "phosphorus": p, "potassium": k, 
-#                         "temperature": temp, "humidity": humidity, 
-#                         "ph": ph, "rainfall": rainfall
-#                     }
-#                     features = [list(data.values())]
-#                     probabilities = crop_model.predict_proba(features)[0]
-#                     crop_probabilities = list(zip(crop_model.classes_, probabilities))
-#                     top_crops = sorted(crop_probabilities, key=lambda i: i[1], reverse=True)[:3]
-                    
-#                     st.session_state.recommendations = []
-#                     for crop, confidence in top_crops:
-#                         rec_id = db_functions.save_recommendation(data, crop.capitalize())
-#                         st.session_state.recommendations.append({
-#                             'id': rec_id, 
-#                             'crop': crop, 
-#                             'confidence': confidence, 
-#                             'status': 'new'
-#                         })
-                        
-#                 except Exception as e:
-#                     st.error(f"Analysis failed: {str(e)}")
-        
-#         # Display recommendations
-#         if st.session_state.recommendations:
-#             rec_cols = st.columns(3)
-#             for i, rec in enumerate(st.session_state.recommendations):
-#                 with rec_cols[i]:
-#                     is_done = (rec['status'] == 'done')
-#                     done_class = "done" if is_done else ""
-#                     st.markdown(f'<div class="recommendation-item {done_class}">', unsafe_allow_html=True)
-                    
-#                     relative_image_path = crop_data.CROP_IMAGES.get(rec['crop'].lower(), crop_data.CROP_IMAGES['default'])
-#                     full_image_path = os.path.join(ROOT_DIR, relative_image_path)
-                    
-#                     if os.path.exists(full_image_path):
-#                         st.image(full_image_path, use_container_width=True)
-#                     else:
-#                         st.info("🌱 Default crop image")
-                    
-#                     details = crop_data.CROP_DETAILS.get(rec['crop'].lower(), crop_data.CROP_DETAILS['default'])
-#                     st.markdown(f"**{rec['crop'].capitalize()}**")
-#                     st.markdown(f"*Confidence: {rec['confidence']*100:.1f}%*")
-#                     st.markdown(f"{details['description']}")
-#                     st.markdown(f"💧 Water: {details['water']} | ⚖️ Yield: {details['yield']}")
-                    
-#                     if not is_done:
-#                         if st.button("Mark as Done", key=f"done_{rec['id']}"):
-#                             db_functions.mark_as_done(rec['id'])
-#                             st.session_state.recommendations[i]['status'] = 'done'
-#                             st.rerun()
-#                     else:
-#                         st.success("✔️ Done")
-#                     st.markdown('</div>', unsafe_allow_html=True)
-#         else:
-#             st.info("👆 Click 'Get Recommendations' to see suggested crops for your conditions")
-
-# except Exception as e:
-#     st.error("An error occurred on this page")
-#     if st.checkbox("Show error details"):
-#         st.code(traceback.format_exc())
-
-# ---- pages/2_Recommendations.py ----
-# import streamlit as st
-# import joblib
-# from streamlit_folium import st_folium
-# import folium
-# from geopy.geocoders import Nominatim
-# import requests
-# import sys
-# import os
-# import warnings
-# import traceback
-
-# # Suppress warnings
-# warnings.filterwarnings('ignore')
-
-# # --- Correctly set up the path to import shared files ---
-# ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# sys.path.append(ROOT_DIR)
-
-# import db_functions
-# import crop_data
-
-# st.set_page_config(
-#     page_title="Crop Recommendations",
-#     page_icon="✅",
-#     layout="wide",
-#     initial_sidebar_state="expanded"
-# )
-
-# def load_css(file_name):
-#     css_path = os.path.join(ROOT_DIR, file_name)
-#     try:
-#         with open(css_path) as f:
-#             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-#     except FileNotFoundError:
-#         st.warning(f"CSS file not found: {css_path}")
-
-# load_css("style.css")
-
-# # --- Authentication Check ---
-# if not st.session_state.get('logged_in'):
-#     st.error("You need to be logged in to access this page.")
-#     st.page_link("app.py", label="Go to Login")
-#     st.stop()
-
-# # --- Sidebar Navigation ---
-# st.sidebar.title("🌱 AgriAssist")
-# st.sidebar.page_link("app.py", label="Home")
-# st.sidebar.page_link("pages/1_Dashboard.py", label="Dashboard")
-# st.sidebar.page_link("pages/2_Recommendations.py", label="Recommendations", disabled=True)
-# st.sidebar.page_link("pages/3_Insights.py", label="Insights")
-# st.sidebar.page_link("pages/4_History.py", label="History")
-# st.sidebar.page_link("pages/5_Support.py", label="Support")
-# st.sidebar.page_link("pages/6_Profile.py", label="Profile")
-
-# if st.session_state.get('role') == 'Admin':
-#     st.sidebar.page_link("pages/7_Admin_Dashboard.py", label="Admin Dashboard")
-
-# st.sidebar.markdown("---")
-# st.sidebar.markdown(f"**User:** {st.session_state.get('username', 'Unknown')}")
-
-# if st.sidebar.button("Logout", type="primary"):
-#     for key in list(st.session_state.keys()):
-#         del st.session_state[key]
-#     st.rerun()
-
-# TIPS = [
-#     "**Soil Testing:** Regularly test your soil to understand its nutrient profile and pH level for accurate recommendations.",
-#     "**Crop Rotation:** Avoid planting the same crop in the same place year after year to manage pests and improve soil health.",
-#     "**Water Management:** Use efficient irrigation methods like drip irrigation to conserve water.",
-#     "**Integrated Pest Management (IPM):** Combine biological, cultural, and chemical practices to manage pests sustainably."
-# ]
-
-# # --- Helper functions ---
-# def get_weather(lat, lon):
-#     try:
-#         api_key = st.secrets.get("OPENWEATHER_API_KEY", "")
-#         if not api_key:
-#             return {"temperature": 25.0, "humidity": 70.0}
-
-#         url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
-#         response = requests.get(url, timeout=10).json()
-#         return {"temperature": response["main"]["temp"], "humidity": response["main"]["humidity"]}
-#     except Exception:
-#         return {"temperature": 25.0, "humidity": 70.0}
-
-# def create_map(lat, lon, address=None):
-#     """Create map centered on given coordinates with marker and tooltip"""
-#     try:
-#         m = folium.Map(location=[lat, lon], zoom_start=10)
-#         popup_text = address if address else f"Lat: {lat:.4f}, Lon: {lon:.4f}"
-#         folium.Marker(
-#             [lat, lon],
-#             popup=popup_text,
-#             tooltip="📍 Click to move marker",
-#             icon=folium.Icon(color="green", icon="leaf")
-#         ).add_to(m)
-#         return m
-#     except Exception:
-#         return None
-
-# def reverse_geocode(lat, lon):
-#     """Convert coordinates to address"""
-#     try:
-#         geolocator = Nominatim(user_agent="crop_recommender_app")
-#         location = geolocator.reverse((lat, lon), timeout=10)
-#         return location.address if location else "Address not found"
-#     except Exception:
-#         return "Address lookup failed"
-
-# def geocode_address(search_query):
-#     """Convert address to coordinates"""
-#     try:
-#         geolocator = Nominatim(user_agent="crop_recommender_app")
-#         location = geolocator.geocode(search_query, timeout=10)
-#         if location:
-#             return location.latitude, location.longitude, location.address
-#         return None, None, None
-#     except Exception:
-#         return None, None, None
-
-# # Load model safely
-# try:
-#     model_path = os.path.join(ROOT_DIR, 'crop_model.joblib')
-#     crop_model = joblib.load(model_path)
-# except Exception as e:
-#     st.error(f"Model loading error: {e}")
-#     crop_model = None
-
-# # --- Default location: Bangalore ---
-# DEFAULT_LAT, DEFAULT_LON = 12.9716, 77.5946
-# DEFAULT_ADDRESS = "Bangalore, Karnataka, India"
-
-# # Initialize session state for location and address
-# if "lat" not in st.session_state:
-#     st.session_state.lat = DEFAULT_LAT
-# if "lon" not in st.session_state:
-#     st.session_state.lon = DEFAULT_LON
-# if "address" not in st.session_state:
-#     st.session_state.address = DEFAULT_ADDRESS
-
-# # --- PAGE CONTENT ---
-# st.title("Crop Recommendation Tool")
-
-# try:
-#     # --- Crop Filter Section ---
-#     with st.expander("🔎 Explore Crops by Season or Type"):
-#         col1, col2 = st.columns(2)
-#         with col1:
-#             season = st.selectbox("Filter by Season", options=list(crop_data.CROP_FILTER_DATA['seasons'].keys()))
-#             st.markdown(f"<div class='crop-list'>{' | '.join(crop_data.CROP_FILTER_DATA['seasons'][season])}</div>", unsafe_allow_html=True)
-#         with col2:
-#             crop_type = st.selectbox("Filter by Type", options=list(crop_data.CROP_FILTER_DATA['types'].keys()))
-#             st.markdown(f"<div class='crop-list'>{' | '.join(crop_data.CROP_FILTER_DATA['types'][crop_type])}</div>", unsafe_allow_html=True)
-
-#     # --- Location Section ---
-#     with st.container(border=True):
-#         st.subheader("📍 Location Selection")
-
-#         # Display current info
-#         st.markdown(f"**Current Coordinates:** 🌐 {st.session_state.lat:.4f}, {st.session_state.lon:.4f}")
-#         st.markdown(f"**Address:** 🏡 {st.session_state.address}")
-
-#         # Search bar with clear button
-#         search_col, clear_col = st.columns([4, 1])
-#         with search_col:
-#             search_query = st.text_input("Search for a location", value=st.session_state.address)
-#         with clear_col:
-#             if st.button("🧭 Clear", help="Reset to default Bangalore location"):
-#                 st.session_state.lat = DEFAULT_LAT
-#                 st.session_state.lon = DEFAULT_LON
-#                 st.session_state.address = DEFAULT_ADDRESS
-#                 st.rerun()
-
-#         # Handle search input
-#         if search_query and search_query != st.session_state.address:
-#             lat, lon, address = geocode_address(search_query)
-#             if lat and lon:
-#                 st.session_state.lat, st.session_state.lon, st.session_state.address = lat, lon, address
-#                 st.success(f"✅ Found location: {address}")
-#             else:
-#                 st.warning("⚠️ Could not find location, keeping previous.")
-
-#         # Create and show map
-#         m = create_map(st.session_state.lat, st.session_state.lon, st.session_state.address)
-#         if m:
-#             map_data = st_folium(m, height=350, use_container_width=True, key="main_map")
-#             if map_data and map_data.get("last_clicked"):
-#                 clicked_lat = map_data["last_clicked"]["lat"]
-#                 clicked_lon = map_data["last_clicked"]["lng"]
-#                 st.session_state.lat, st.session_state.lon = clicked_lat, clicked_lon
-#                 st.session_state.address = reverse_geocode(clicked_lat, clicked_lon)
-#                 st.rerun()
-#         else:
-#             st.error("❌ Failed to load map")
-
-#     # --- Input Parameters ---
-#     weather_data = get_weather(st.session_state.lat, st.session_state.lon)
-#     with st.container(border=True):
-#         st.subheader("🧪 Input Parameters")
-#         form_col1, form_col2 = st.columns(2)
-#         with form_col1:
-#             n = st.slider("Nitrogen (N)", 0, 140, 50, step=1)
-#             p = st.slider("Phosphorus (P)", 5, 145, 50, step=1)
-#             k = st.slider("Potassium (K)", 5, 205, 50, step=1)
-#         with form_col2:
-#             temp_val = max(8.0, min(50.0, float(weather_data["temperature"])))
-#             hum_val = max(14.0, min(100.0, float(weather_data["humidity"])))
-#             temp = st.slider("Temperature (°C)", 8.0, 50.0, temp_val, 0.1, step=0.1)
-#             humidity = st.slider("Humidity (%)", 14.0, 100.0, hum_val, 0.1, step=0.1)
-#             ph = st.slider("Soil pH", 3.5, 9.9, 6.5, 0.1, step=0.1)
-#         rainfall = st.slider("Rainfall (mm)", 20.0, 300.0, 100.0, 0.1, step=0.1)
-#         submitted = st.button("Get Recommendations", type="primary")
-
-#     # --- Tips Section ---
-#     with st.container(border=True):
-#         st.subheader("💡 Agricultural Tips")
-#         for tip in TIPS:
-#             st.markdown(f"<div class='tip-item'>{tip}</div>", unsafe_allow_html=True)
-
-#     # --- Recommendations Section ---
-#     with st.container(border=True):
-#         st.subheader("✅ Recommended Crops")
-
-#         if "recommendations" not in st.session_state:
-#             st.session_state.recommendations = []
-
-#         if submitted and crop_model:
-#             with st.spinner("Analyzing soil and weather conditions..."):
-#                 try:
-#                     data = {
-#                         "nitrogen": n, "phosphorus": p, "potassium": k,
-#                         "temperature": temp, "humidity": humidity,
-#                         "ph": ph, "rainfall": rainfall
-#                     }
-#                     features = [list(data.values())]
-#                     probabilities = crop_model.predict_proba(features)[0]
-#                     crop_probabilities = list(zip(crop_model.classes_, probabilities))
-#                     top_crops = sorted(crop_probabilities, key=lambda i: i[1], reverse=True)[:3]
-
-#                     st.session_state.recommendations = []
-#                     for crop, confidence in top_crops:
-#                         rec_id = db_functions.save_recommendation(data, crop.capitalize())
-#                         st.session_state.recommendations.append({
-#                             'id': rec_id,
-#                             'crop': crop,
-#                             'confidence': confidence,
-#                             'status': 'new'
-#                         })
-
-#                 except Exception as e:
-#                     st.error(f"Analysis failed: {str(e)}")
-
-#         # Display recommendations
-#         if st.session_state.recommendations:
-#             rec_cols = st.columns(3)
-#             for i, rec in enumerate(st.session_state.recommendations):
-#                 with rec_cols[i]:
-#                     is_done = (rec['status'] == 'done')
-#                     done_class = "done" if is_done else ""
-#                     st.markdown(f'<div class="recommendation-item {done_class}">', unsafe_allow_html=True)
-
-#                     relative_image_path = crop_data.CROP_IMAGES.get(rec['crop'].lower(), crop_data.CROP_IMAGES['default'])
-#                     full_image_path = os.path.join(ROOT_DIR, relative_image_path)
-
-#                     if os.path.exists(full_image_path):
-#                         st.image(full_image_path, use_container_width=True)
-#                     else:
-#                         st.info("🌱 Default crop image")
-
-#                     details = crop_data.CROP_DETAILS.get(rec['crop'].lower(), crop_data.CROP_DETAILS['default'])
-#                     st.markdown(f"**{rec['crop'].capitalize()}**")
-#                     st.markdown(f"*Confidence: {rec['confidence']*100:.1f}%*")
-#                     st.markdown(f"{details['description']}")
-#                     st.markdown(f"💧 Water: {details['water']} | ⚖️ Yield: {details['yield']}")
-
-#                     if not is_done:
-#                         if st.button("Mark as Done", key=f"done_{rec['id']}"):
-#                             db_functions.mark_as_done(rec['id'])
-#                             st.session_state.recommendations[i]['status'] = 'done'
-#                             st.rerun()
-#                     else:
-#                         st.success("✔️ Done")
-#                     st.markdown('</div>', unsafe_allow_html=True)
-#         else:
-#             st.info("👆 Click 'Get Recommendations' to see suggested crops for your conditions")
-
-# except Exception:
-#     st.error("An error occurred on this page")
-#     if st.checkbox("Show error details"):
-#         st.code(traceback.format_exc())
 # ---- pages/2_Recommendations.py ----
 import streamlit as st
 import joblib
@@ -727,27 +9,22 @@ import sys
 import os
 
 # --- Correctly set up the path to import shared files ---
-# This script is in the 'pages' folder, so we go up one level to the root
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
 
 import db_functions
 import crop_data
-# from sidebar import authenticated_sidebar
-# from header import custom_header
+from layout_helper import setup_page, close_page_div
 
 st.set_page_config(page_title="Crop Recommendations", page_icon="✅", layout="wide", initial_sidebar_state="expanded")
 
-def load_css(file_name):
-    # Construct the correct, absolute path to the CSS file from the root
-    css_path = os.path.join(ROOT_DIR, file_name)
-    with open(css_path, encoding='utf-8') as f: 
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-load_css("style_pro.css")
-
-# Add page-specific CSS class
-st.markdown('<div class="recommendations-page">', unsafe_allow_html=True)
+# Setup page with consistent layout
+setup_page(
+    title="Recommendations",
+    icon="✅",
+    background_image="https://images.unsplash.com/photo-1574943320219-553eb213f72d?q=80&w=2070&auto=format&fit=crop",
+    page_class="recommendations-page"
+)
 
 # Advanced Premium Background with Multiple Layers and Effects
 st.markdown(
@@ -1320,51 +597,54 @@ with st.container(border=True):
     if 'selected_location_name' not in st.session_state:
         st.session_state.selected_location_name = ""
 
-    col1, col2 = st.columns([4, 1])
+    # Show current selected location
+    if st.session_state.selected_location_name:
+        st.info(f"📍 **Selected:** {st.session_state.selected_location_name}")
     
-    with col1:
-        search_query = st.text_input("Search for a location", value=st.session_state.search_query, key="location_search")
+    search_query = st.text_input("Search for a location", placeholder="Enter city, address, or coordinates")
     
-    with col2:
-        sync_button = st.button("🔄", help="Sync with map selection", type="secondary")
-        if sync_button and st.session_state.selected_location_name:
-            st.session_state.search_query = st.session_state.selected_location_name
-            st.rerun()
-    
-    # Handle search submission
-    if search_query and search_query != st.session_state.search_query:
-        st.session_state.search_query = search_query
+    # Handle search submission only on Enter
+    if search_query and search_query != st.session_state.get('last_search', ''):
+        st.session_state.last_search = search_query
         try:
             geolocator = Nominatim(user_agent="crop_recommender")
             location = geolocator.geocode(search_query)
             if location: 
                 st.session_state.lat, st.session_state.lon = location.latitude, location.longitude
-                st.session_state.selected_location_name = search_query
-                st.rerun()
-        except Exception: 
-            st.warning("Geocoding failed.")
-
-    # Show current selected location
-    if st.session_state.selected_location_name:
-        st.write(f"**Selected:** {st.session_state.selected_location_name}")
+                st.session_state.selected_location_name = location.address
+                st.success("✅ Location found!")
+            else:
+                st.warning("⚠️ Location not found. Try a different search.")
+        except Exception as e: 
+            st.error(f"Geocoding failed: {str(e)}")
 
     # Create the map
     m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=10)
     folium.Marker([st.session_state.lat, st.session_state.lon]).add_to(m)
     
+    # Store previous coordinates to detect actual changes
+    if 'prev_lat' not in st.session_state:
+        st.session_state.prev_lat = st.session_state.lat
+        st.session_state.prev_lon = st.session_state.lon
+    
     map_data = st_folium(m, height=350, use_container_width=True, key="map")
     
-    # Handle map click
+    # Handle map click - only update if coordinates actually changed
     if map_data and map_data.get("last_clicked"):
         clicked_lat, clicked_lon = map_data["last_clicked"]["lat"], map_data["last_clicked"]["lng"]
         
-        if (st.session_state.lat, st.session_state.lon) != (clicked_lat, clicked_lon):
+        # Check if coordinates changed significantly (avoid float precision issues)
+        lat_changed = abs(st.session_state.prev_lat - clicked_lat) > 0.0001
+        lon_changed = abs(st.session_state.prev_lon - clicked_lon) > 0.0001
+        
+        if lat_changed or lon_changed:
             st.session_state.lat, st.session_state.lon = clicked_lat, clicked_lon
+            st.session_state.prev_lat, st.session_state.prev_lon = clicked_lat, clicked_lon
             
             # Reverse geocode to get location name
             try:
                 geolocator = Nominatim(user_agent="crop_recommender")
-                location = geolocator.reverse(f"{clicked_lat}, {clicked_lon}", exactly_one=True)
+                location = geolocator.reverse(f"{clicked_lat}, {clicked_lon}", exactly_one=True, timeout=5)
                 if location and location.address:
                     st.session_state.selected_location_name = location.address
                 else:
@@ -1420,17 +700,30 @@ with st.container(border=True):
 with st.container(border=True):
     st.subheader("✅ Recommended Crops")
     if "recommendations" not in st.session_state: st.session_state.recommendations = []
-    if submitted and crop_model:
-        with st.spinner("Analyzing..."):
-            data = {"nitrogen": n, "phosphorus": p, "potassium": k, "temperature": temp, "humidity": humidity, "ph": ph, "rainfall": rainfall}
-            features = [list(data.values())]
-            probabilities = crop_model.predict_proba(features)[0]
-            crop_probabilities = list(zip(crop_model.classes_, probabilities))
-            top_crops = sorted(crop_probabilities, key=lambda i: i[1], reverse=True)[:3]
-            st.session_state.recommendations = []
-            for crop, confidence in top_crops:
-                rec_id = db_functions.save_recommendation(data, crop.capitalize())
-                st.session_state.recommendations.append({'id': rec_id, 'crop': crop, 'confidence': confidence, 'status': 'new'})
+    
+    if submitted:
+        if not crop_model:
+            st.error("❌ Model not loaded. Cannot generate recommendations.")
+        else:
+            with st.spinner("Analyzing..."):
+                try:
+                    data = {"nitrogen": n, "phosphorus": p, "potassium": k, "temperature": temp, "humidity": humidity, "ph": ph, "rainfall": rainfall}
+                    features = [list(data.values())]
+                    probabilities = crop_model.predict_proba(features)[0]
+                    crop_probabilities = list(zip(crop_model.classes_, probabilities))
+                    top_crops = sorted(crop_probabilities, key=lambda i: i[1], reverse=True)[:3]
+                    st.session_state.recommendations = []
+                    for crop, confidence in top_crops:
+                        try:
+                            rec_id = db_functions.save_recommendation(data, crop.capitalize())
+                        except Exception as db_err:
+                            st.warning(f"Could not save recommendation: {db_err}")
+                            rec_id = None
+                        st.session_state.recommendations.append({'id': rec_id, 'crop': crop, 'confidence': confidence, 'status': 'new'})
+                    st.success("✅ Recommendations generated successfully!")
+                except Exception as e:
+                    st.error(f"❌ Error generating recommendations: {str(e)}")
+                    st.session_state.recommendations = []
     
     if st.session_state.recommendations:
         rec_cols = st.columns(3)
@@ -1448,16 +741,23 @@ with st.container(border=True):
                 else:
                     st.warning(f"Image not found")
 
-                details = crop_data.CROP_DETAILS.get(rec['crop'].lower(), crop_data.CROP_DETAILS['default'])
+                details = crop_data.CROP_DETAILS.get(rec['crop'].lower(), crop_data.CROP_DETAILS.get('default', {'description': 'N/A', 'water': 'N/A', 'yield': 'N/A'}))
                 st.markdown(f"**{rec['crop'].capitalize()}**")
                 st.markdown(f"<small>Confidence: {rec['confidence']*100:.1f}%</small>", unsafe_allow_html=True)
                 st.markdown(f"<small>{details['description']}</small>", unsafe_allow_html=True)
                 st.markdown(f"<small>💧 Water: {details['water']} | ⚖️ Yield: {details['yield']}</small>", unsafe_allow_html=True)
                 if not is_done:
-                    if st.button("Mark as Done", key=f"done_{rec['id']}"):
-                        db_functions.mark_as_done(rec['id'])
-                        st.session_state.recommendations[i]['status'] = 'done'
-                        st.rerun()
+                    # Only show button if rec_id is valid
+                    if rec.get('id'):
+                        if st.button("Mark as Done", key=f"done_{rec['id']}"):
+                            try:
+                                db_functions.mark_as_done(rec['id'])
+                                st.session_state.recommendations[i]['status'] = 'done'
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Could not mark as done: {e}")
+                    else:
+                        st.info("ℹ️ Not saved to database")
                 else:
                     st.success("✔️ Done")
                 st.markdown('</div>', unsafe_allow_html=True)
