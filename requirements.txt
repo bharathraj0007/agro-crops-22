@@ -1,0 +1,9 @@
+streamlit>=1.28.0
+pandas==2.2.2
+scikit-learn==1.4.2
+folium==0.16.0
+streamlit-folium==0.19.1
+geopy==2.4.1
+requests==2.31.0
+streamlit-toggle-switch==1.0.2
+plotly>=5.23.0
